@@ -1,0 +1,70 @@
+# Configuration file for diffusion registration
+
+# Training parameters
+training:
+  epochs: 30000
+  batch_size: 16
+  learning_rate: 0.2e-4 
+  print_every: 1
+  save_every: 10000
+  device: "cuda"  # or "cpu"
+
+# Model configuration
+model:
+  dimension: 2  # 2 or 3 for 2D/3D registration
+  image_size: 256
+  num_multiscale_levels: 3
+  use_affine_only: false
+  
+# Network architecture
+network:
+  unet_channels: [2, 16, 32, 64, 256, 512]
+  use_batch_norm: true
+  dropout_rate: 0.05
+
+# Diffusion model settings
+diffusion:
+  model_path: "guided_diffusion/256x256_diffusion_uncond.pt"
+  image_size: 256
+  class_cond: false
+  learn_sigma: true
+  num_channels: 256
+  num_res_blocks: 2
+  channel_mult: ""
+  num_heads: 4
+  num_head_channels: 64
+  num_heads_upsample: -1
+  attention_resolutions: "32,16,8"
+  dropout: 0.0
+  diffusion_steps: 1000
+  noise_schedule: "linear"
+  timestep_respacing: ""
+  use_kl: false
+  predict_xstart: false
+  rescale_timesteps: false
+  rescale_learned_sigmas: false
+  use_checkpoint: false
+  use_scale_shift_norm: true
+  resblock_updown: true
+  use_fp16: false
+  use_new_attention_order: false
+
+# Loss function settings
+loss:
+  type: "LNCC"  # Options: "LNCC", "NewLNCC", "NCC", "SSD", "MINDSSC", "NMI"
+  sigma: 4  # For LNCC/NewLNCC
+  lambda_regularization: 1.0
+  eps: 1.0e-6
+
+# Data settings
+data:
+  data_root: "/home/students/studweilc1/dgir/own_data/my_data3"
+  weird_xrays: []
+  normalize_images: true
+  
+# Output settings
+output:
+  checkpoint_dir: "checkpoints/lncc"
+  log_dir: "logs/lncc"
+  results_dir: "results/lncc"
+  name: "2d_lncc"

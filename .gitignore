@@ -1,0 +1,10 @@
+slurm/*
+logs/*
+checkpoints/*
+results/*
+*.pyc
+__pycache__/
+own_data/*
+guided_diffusion/256x256_diffusion_uncond.pt
+old/*
+logs/training.log

@@ -2,6 +2,8 @@ import math
 import random
 import torch
 import einops
+import numpy as np
+import torch.nn.functional as F
 from guided_diffusion.nn import timestep_embedding
 
 
@@ -92,7 +94,8 @@ class NewLNCC(SimilarityBase):
         self.eps = eps
 
     def blur(self, tensor):
-        return gaussian_blur(tensor, self.sigma * 4 + 1, self.sigma)
+        kernel_size = int(self.sigma * 4 + 1)
+        return gaussian_blur(tensor, kernel_size, self.sigma)
     
     def lncc(self, A, B):
         return torch.mean(

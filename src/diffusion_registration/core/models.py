@@ -104,25 +104,38 @@ def setup_registration_net(config: Config, model: Any = None, diffusion: Any = N
         else:
             raise ValueError(f"Unsupported dimension: {config.model.dimension}")
     
-    # Create base network
-    if config.model.dimension == 2:
-        base_net = networks.tallUNet2(dimension=2)
-    elif config.model.dimension == 3:
-        base_net = networks.tallUNet2(dimension=3)
-    else:
-        raise ValueError(f"Unsupported dimension: {config.model.dimension}")
-    
-    # Wrap in function from vector field
-    inner_net = wrappers.FunctionFromVectorField(base_net)
-    
-    # Add multiscale levels
-    for _ in range(config.model.num_multiscale_levels):
-        inner_net = wrappers.TwoStepRegistration(
-            wrappers.DownsampleRegistration(inner_net, dimension=config.model.dimension),
-            wrappers.FunctionFromVectorField(
-                networks.tallUNet2(dimension=config.model.dimension)
+    if not config.model.use_affine_only:
+        # Create base network
+        if config.model.dimension == 2:
+            base_net = networks.tallUNet2(dimension=2)
+        elif config.model.dimension == 3:
+            base_net = networks.tallUNet2(dimension=3)
+        else:
+            raise ValueError(f"Unsupported dimension: {config.model.dimension}")
+        
+        # Wrap in function from vector field
+        inner_net = wrappers.FunctionFromVectorField(base_net)
+        
+        # Add multiscale levels
+        for _ in range(config.model.num_multiscale_levels):
+            inner_net = wrappers.TwoStepRegistration(
+                wrappers.DownsampleRegistration(inner_net, dimension=config.model.dimension),
+                wrappers.FunctionFromVectorField(
+                    networks.tallUNet2(dimension=config.model.dimension)
+                )
             )
-        )
+    else:
+        # Create a base network that outputs affine matrix parameters
+        if config.model.dimension == 2:
+            base_net = networks.ConvolutionalMatrixNet(dimension=2)
+        elif config.model.dimension == 3:
+            base_net = networks.ConvolutionalMatrixNet(dimension=3)
+        else:
+            raise ValueError(f"Unsupported dimension: {config.model.dimension}")
+
+        # Wrap in FunctionFromMatrix, which interprets the output as an affine transform
+        inner_net = wrappers.FunctionFromMatrix(base_net)
+
     
     # Setup loss function
     loss_fn = create_loss_function(config, model, diffusion)
@@ -267,6 +280,6 @@ class DiffusionRegistrationNet:
     
     def load_checkpoint(self, path: str):
         """Load model checkpoint."""
-        checkpoint = torch.load(path, map_location='cpu')
+        checkpoint = torch.load(path, map_location='cpu', weights_only=False)
         self.load_state_dict(checkpoint['model_state_dict'])
         return checkpoint.get('config', None)

@@ -63,6 +63,7 @@ class Trainer:
     def _setup_logging(self):
         """Setup logging configuration."""
         log_file = Path(self.config.output.log_dir) / 'training.log'
+        log_file.parent.mkdir(parents=True, exist_ok=True)
         logging.basicConfig(
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
@@ -206,6 +207,7 @@ class Trainer:
             filename: Name of checkpoint file.
         """
         checkpoint_path = Path(self.config.output.checkpoint_dir) / filename
+        checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
         
         checkpoint = {
             'epoch': self.current_epoch,

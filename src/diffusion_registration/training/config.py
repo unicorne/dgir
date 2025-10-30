@@ -24,6 +24,7 @@ class ModelConfig:
     dimension: int = 2
     image_size: int = 256
     num_multiscale_levels: int = 3
+    use_affine_only: bool = False
 
 
 @dataclass
@@ -94,6 +95,7 @@ class OutputConfig:
     checkpoint_dir: str = "checkpoints"
     log_dir: str = "logs"
     results_dir: str = "results"
+    name: str = "no_name"
 
 
 class Config:
