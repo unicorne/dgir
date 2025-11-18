@@ -197,7 +197,7 @@ class RegistrationDataset:
         
         return batch_A, batch_B
 
-def load_custom_data(config: Config, with_masks=False) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+def load_custom_data(config: Config, with_masks=False, test_data = False) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     """
     Load custom preprocessed 2D data for training.
     This function loads two sets of images and their corresponding masks.
@@ -212,7 +212,7 @@ def load_custom_data(config: Config, with_masks=False) -> Tuple[torch.Tensor, to
     
     # --- Define your contrasts and file names ---
     # You can change these to load different contrasts
-    contrast_a = "T1_mapping_fl2d"
+    contrast_a = config.data.contrast
     contrast_b = "DIXON"
 
     # --- Load Training Data ---
@@ -226,6 +226,27 @@ def load_custom_data(config: Config, with_masks=False) -> Tuple[torch.Tensor, to
     train_images_b = load_tensor(train_b_path)
     train_masks_a = load_tensor(train_a_masks_path)
     train_masks_b = load_tensor(train_b_masks_path)
+
+    if test_data:
+        split="test"
+    else:
+        split="val"
+
+    train_a_path_val = root / f"{split}/{contrast_a}.pt"
+    train_b_path_val = root / f"{split}/{contrast_b}.pt"
+    train_a_masks_path_val = root / f"{split}/{contrast_a}_masks.pt"
+    train_b_masks_path_val = root / f"{split}/{contrast_b}_masks.pt"
+
+    print("Loading validation data to add to training set...")
+    val_images_a = load_tensor(train_a_path_val)
+    val_images_b = load_tensor(train_b_path_val)
+    val_masks_a = load_tensor(train_a_masks_path_val)
+    val_masks_b = load_tensor(train_b_masks_path_val)
+
+    train_images_a = torch.cat((train_images_a, val_images_a), dim=0)
+    train_images_b = torch.cat((train_images_b, val_images_b), dim=0)
+    train_masks_a = torch.cat((train_masks_a, val_masks_a), dim=0)
+    train_masks_b = torch.cat((train_masks_b, val_masks_b), dim=0)
 
     # Combine images with their masks as a second channel if needed
     # For now, we'll assume the model takes single-channel images and masks are handled separately.
@@ -273,7 +294,7 @@ def load_custom_data(config: Config, with_masks=False) -> Tuple[torch.Tensor, to
         return train_A, train_B, test_A, test_B
 
 
-def create_data_loaders(config: Config, with_masks=False) -> Tuple[RegistrationDataset, RegistrationDataset]:
+def create_data_loaders(config: Config, with_masks=False, test_data=False) -> Tuple[RegistrationDataset, RegistrationDataset]:
     """
     Create train and test data loaders based on configuration.
     
@@ -286,12 +307,12 @@ def create_data_loaders(config: Config, with_masks=False) -> Tuple[RegistrationD
     if config.model.dimension == 2:
         # Use our new custom data loading function
         if not with_masks:
-            train_A, train_B, test_A, test_B = load_custom_data(config, with_masks=False)
+            train_A, train_B, test_A, test_B = load_custom_data(config, with_masks=False, test_data=test_data)
             train_dataset = RegistrationDataset(train_A, train_B, config.training.device)
             test_dataset = RegistrationDataset(test_A, test_B, config.training.device)
             return train_dataset, test_dataset
         else:
-            train_A, train_B, train_A_masks, train_B_masks, test_A, test_B, test_A_masks, test_B_masks = load_custom_data(config, with_masks=True)
+            train_A, train_B, train_A_masks, train_B_masks, test_A, test_B, test_A_masks, test_B_masks = load_custom_data(config, with_masks=True, test_data=test_data)
             train_dataset = RegistrationDataset(train_A, train_B, config.training.device)
             test_dataset = RegistrationDataset(test_A, test_B, config.training.device)
             train_masks_dataset = RegistrationDataset(train_A_masks, train_B_masks, config.training.device)

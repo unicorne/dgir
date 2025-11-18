@@ -49,9 +49,12 @@ class Trainer:
         # Initialize tracking
         self.current_epoch = 0
         self.loss_history = {
-            'all_loss': [],
-            'similarity_loss': [],
-            'regularization_loss': []
+            'train_all_loss': [],
+            'train_similarity_loss': [],
+            'train_regularization_loss': [],
+            'val_all_loss': [],
+            'val_similarity_loss': [],
+            'val_regularization_loss': []
         }
         
         # Setup logging
@@ -169,15 +172,21 @@ class Trainer:
             
             # Train epoch
             train_losses = self.train_epoch(train_dataset)
+            self.loss_history['train_all_loss'].append((epoch, train_losses['all_loss']))
+            self.loss_history['train_similarity_loss'].append((epoch, train_losses['similarity_loss']))
+            self.loss_history['train_regularization_loss'].append((epoch, train_losses['regularization_loss']))
             
             # Update loss history
-            for key, value in train_losses.items():
-                self.loss_history[key].append(value)
+            #for key, value in train_losses.items():
+            #    self.loss_history[key].append(value)
             
             # Validation
             val_losses = None
-            if val_dataset is not None and epoch % (self.config.training.print_every * 5) == 0:
+            if val_dataset is not None and epoch % (self.config.training.print_every) == 0:
                 val_losses = self.validate(val_dataset)
+                self.loss_history['val_all_loss'].append((epoch, val_losses['all_loss']))
+                self.loss_history['val_similarity_loss'].append((epoch, val_losses['similarity_loss']))
+                self.loss_history['val_regularization_loss'].append((epoch, val_losses['regularization_loss']))
             
             # Logging
             if epoch % self.config.training.print_every == 0:
@@ -195,9 +204,15 @@ class Trainer:
             # Save checkpoints
             if epoch % self.config.training.save_every == 0 and epoch > 0:
                 self.save_checkpoint(f"checkpoint_epoch_{epoch}.pth")
+
+            if epoch % self.config.training.plot_every == 0 and epoch > 0:
+                plot_path = Path(self.config.output.results_dir) / f'losses_epoch_{epoch}.png'
+                self.plot_losses(save_path=str(plot_path))
         
         self.logger.info("Training completed!")
         self.save_checkpoint("final_model.pth")
+        final_plot_path = Path(self.config.output.results_dir) / 'losses_final.png'
+        self.plot_losses(save_path=str(final_plot_path))
     
     def save_checkpoint(self, filename: str):
         """
@@ -244,10 +259,10 @@ class Trainer:
         
         self.logger.info(f"Checkpoint loaded: {checkpoint_path}")
         return checkpoint
-    
+
     def plot_losses(self, save_path: Optional[str] = None):
         """
-        Plot training losses.
+        Plot training and validation losses.
         
         Args:
             save_path: Optional path to save the plot.
@@ -255,21 +270,47 @@ class Trainer:
         try:
             import matplotlib.pyplot as plt
             
-            fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+            fig, axes = plt.subplots(1, 3, figsize=(18, 5))
             
-            for i, (loss_name, loss_values) in enumerate(self.loss_history.items()):
-                if loss_values:  # Only plot if we have data
-                    axes[i].plot(loss_values)
-                    axes[i].set_title(f'{loss_name.replace("_", " ").title()}')
-                    axes[i].set_xlabel('Epoch')
-                    axes[i].set_ylabel('Loss')
-                    axes[i].grid(True)
+            # Helper function to plot curves
+            def plot_curve(ax, train_data, val_data, title):
+                if train_data:
+                    epochs, values = zip(*train_data)
+                    ax.plot(epochs, values, label='Train', alpha=0.8)
+                if val_data:
+                    epochs, values = zip(*val_data)
+                    ax.plot(epochs, values, label='Validation', linestyle='--', marker='o', markersize=3)
+                ax.set_title(title)
+                ax.set_xlabel('Epoch')
+                ax.set_ylabel('Loss')
+                ax.grid(True)
+                if train_data or val_data:
+                    ax.legend()
+
+            # Plot Total Loss
+            plot_curve(axes[0], 
+                       self.loss_history['train_all_loss'], 
+                       self.loss_history['val_all_loss'], 
+                       'Total Loss')
+            
+            # Plot Similarity Loss
+            plot_curve(axes[1], 
+                       self.loss_history['train_similarity_loss'], 
+                       self.loss_history['val_similarity_loss'], 
+                       'Similarity Loss')
+            
+            # Plot Regularization Loss
+            plot_curve(axes[2], 
+                       self.loss_history['train_regularization_loss'], 
+                       self.loss_history['val_regularization_loss'], 
+                       'Regularization Loss')
             
             plt.tight_layout()
             
             if save_path:
                 plt.savefig(save_path)
                 self.logger.info(f"Loss plot saved: {save_path}")
+                plt.close(fig)  # Close the figure to free up memory
             else:
                 plt.show()
                 
@@ -304,7 +345,3 @@ def train_model(config_path: str):
     
     # Train
     trainer.train(train_dataset, test_dataset)
-    
-    # Plot losses
-    loss_plot_path = Path(config.output.results_dir) / 'training_losses.png'
-    trainer.plot_losses(str(loss_plot_path))

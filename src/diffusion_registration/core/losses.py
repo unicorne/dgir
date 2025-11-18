@@ -86,12 +86,15 @@ class LNCC(SimilarityBase):
     
 
 class NewLNCC(SimilarityBase):
-    def __init__(self, diffusion, model, sigma, eps=1e-6):
+    def __init__(self, diffusion, model, sigma, eps=1e-6, up_ft_index=10, t=60, use_lncc=True):
         super().__init__(isInterpolated=False)
         self.diffusion = diffusion
         self.model = model
         self.sigma = sigma
         self.eps = eps
+        self.up_ft_index = up_ft_index
+        self.t = t
+        self.use_lncc = use_lncc
 
     def blur(self, tensor):
         kernel_size = int(self.sigma * 4 + 1)
@@ -107,6 +110,9 @@ class NewLNCC(SimilarityBase):
             )
         )
     
+    def mse(self, A, B):
+        return torch.mean((A - B) ** 2)
+    
     def cosine_similarity(self, A, B):
         prod_AB = torch.sum(A * B, dim=1)
         norm_A = torch.sum(A ** 2, dim=1).clamp(self.eps) ** 0.5
@@ -116,8 +122,8 @@ class NewLNCC(SimilarityBase):
 
     def __call__(self, image_A, image_B):
 
-        t = 60
-        up_ft_index = 10
+        t = self.t
+        up_ft_index = self.up_ft_index
         decoder_fts = True
 
         img_tensor = 2 * torch.vstack([image_A, image_B]) - 1
@@ -146,6 +152,8 @@ class NewLNCC(SimilarityBase):
                     ft_A = h[:image_A.shape[0]]
                     ft_B = h[image_A.shape[0]:]
                     break
+        if not self.use_lncc:
+            return self.mse(ft_A, ft_B)
         return self.lncc(ft_A, ft_B)
     
 

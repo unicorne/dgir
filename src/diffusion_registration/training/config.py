@@ -15,6 +15,7 @@ class TrainingConfig:
     learning_rate: float = 1e-4
     print_every: int = 100
     save_every: int = 10000
+    plot_every: int = 1000
     device: str = "cuda"
 
 
@@ -74,6 +75,8 @@ class LossConfig:
     type: str = "NewLNCC"
     sigma: float = 4.0
     lambda_regularization: float = 1.0
+    up_ft_index: int = 10
+    t: int = 60
     eps: float = 1e-6
 
 
@@ -83,6 +86,7 @@ class DataConfig:
     data_root: str = ""
     weird_xrays: List[int] = None
     normalize_images: bool = True
+    contrast: str = "T1_mapping_fl2d"
     
     def __post_init__(self):
         if self.weird_xrays is None:
