@@ -6,6 +6,7 @@ if path_to_pip_installs not in sys.path:
 
 from pathlib import Path
 import argparse
+import torch
 
 from src.diffusion_registration import Config, DiffusionRegistrationNet
 from src.diffusion_registration.data.own_loaders import create_data_loaders
@@ -28,6 +29,11 @@ def main():
     # Create data loaders
     train_dataset, test_dataset = create_data_loaders(config)
     print("Data loaders created.")
+    # check dataset of nan
+    for i in range(len(train_dataset)):
+        data_A, data_B = train_dataset[i]
+        if torch.isnan(data_A).any() or torch.isnan(data_B).any():
+            print(f"NaN values found in training dataset at index {i}")
 
     # Initialize network
     net = DiffusionRegistrationNet(config)

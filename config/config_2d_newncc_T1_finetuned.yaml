@@ -2,11 +2,11 @@
 
 # Training parameters
 training:
-  epochs: 10000
+  epochs: 30000
   batch_size: 4
   learning_rate: 0.2e-4 
-  print_every: 1
-  save_every: 1000
+  print_every: 500
+  save_every: 10000
   device: "cuda"  # or "cpu"
 
 # Model configuration
@@ -20,11 +20,11 @@ model:
 network:
   unet_channels: [2, 16, 32, 64, 256, 512]
   use_batch_norm: true
-  dropout_rate: 0.0
+  dropout_rate: 0.1
 
 # Diffusion model settings
 diffusion:
-  model_path: "guided_diffusion/256x256_diffusion_uncond.pt"
+  model_path: "/home/students/studweilc1/MU-Diff/data/models/guided_diffusion/model180000.pt"
   image_size: 256
   class_cond: false
   learn_sigma: true
@@ -53,7 +53,9 @@ diffusion:
 loss:
   type: "NewLNCC"  # Options: "LNCC", "NewLNCC", "NCC", "SSD", "MINDSSC", "NMI"
   sigma: 4  # For LNCC/NewLNCC
-  lambda_regularization: 0.0
+  up_ft_index: 6
+  t: 60
+  lambda_regularization: 0.5
   eps: 1.0e-6
 
 # Data settings
@@ -61,10 +63,11 @@ data:
   data_root: "/home/students/studweilc1/dgir/own_data/my_data3"
   weird_xrays: []
   normalize_images: true
+  contrast: "T1_mapping_fl2d"
   
 # Output settings
 output:
-  checkpoint_dir: "checkpoints/newncc"
-  log_dir: "logs/newncc"
-  results_dir: "results/newncc"
-  name: "2d_newncc"
+  checkpoint_dir: "checkpoints/newncc_T1_ftuned"
+  log_dir: "logs/newncc_T1_ftuned"
+  results_dir: "results/newncc_T1_ftuned"
+  name: "2d_newncc_T1_ftuned"

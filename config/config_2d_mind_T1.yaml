@@ -2,11 +2,11 @@
 
 # Training parameters
 training:
-  epochs: 30000
+  epochs: 50000
   batch_size: 16
   learning_rate: 0.2e-4 
   print_every: 1
-  save_every: 10000
+  save_every: 1000
   device: "cuda"  # or "cpu"
 
 # Model configuration
@@ -14,13 +14,13 @@ model:
   dimension: 2  # 2 or 3 for 2D/3D registration
   image_size: 256
   num_multiscale_levels: 3
-  use_affine_only: true
+  use_affine_only: false
   
 # Network architecture
 network:
   unet_channels: [2, 16, 32, 64, 256, 512]
   use_batch_norm: true
-  dropout_rate: 0.0
+  dropout_rate: 0.05
 
 # Diffusion model settings
 diffusion:
@@ -51,7 +51,7 @@ diffusion:
 
 # Loss function settings
 loss:
-  type: "LNCC"  # Options: "LNCC", "NewLNCC", "NCC", "SSD", "MINDSSC", "NMI"
+  type: "MINDSSC"  # Options: "LNCC", "NewLNCC", "NCC", "SSD", "MINDSSC", "NMI"
   sigma: 4  # For LNCC/NewLNCC
   lambda_regularization: 1.0
   eps: 1.0e-6
@@ -61,10 +61,11 @@ data:
   data_root: "/home/students/studweilc1/dgir/own_data/my_data3"
   weird_xrays: []
   normalize_images: true
+  contrast: "T1_mapping_fl2d"
   
 # Output settings
 output:
-  checkpoint_dir: "checkpoints/affine_lncc"
-  log_dir: "logs/affine_lncc"
-  results_dir: "results/affine_lncc"
-  name: "2d_affine_lncc"
+  checkpoint_dir: "checkpoints/mindssc_T1"
+  log_dir: "logs/mindssc_T1"
+  results_dir: "results/mindssc_T1"
+  name: "2d_mindssc_T1"

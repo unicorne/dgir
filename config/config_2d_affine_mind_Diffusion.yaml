@@ -61,10 +61,11 @@ data:
   data_root: "/home/students/studweilc1/dgir/own_data/my_data3"
   weird_xrays: []
   normalize_images: true
+  contrast: "Diffusion"
   
 # Output settings
 output:
-  checkpoint_dir: "checkpoints/affine_mindssc"
-  log_dir: "logs/affine_mindssc"
-  results_dir: "results/affine_mindssc"
-  name: "2d_affine_mindssc"
+  checkpoint_dir: "checkpoints/affine_mindssc_diffusion"
+  log_dir: "logs/affine_mindssc_diffusion"
+  results_dir: "results/affine_mindssc_diffusion"
+  name: "2d_affine_mindssc_diffusion"

@@ -3,10 +3,12 @@ path_to_pip_installs = "/tmp/test_env"
 if path_to_pip_installs not in sys.path:
     sys.path.insert(0, path_to_pip_installs)
 
+import os
 import argparse
 import itk
 import torch
 import numpy as np
+import pandas as pd
 from pathlib import Path
 import matplotlib.pyplot as plt
 
@@ -33,11 +35,11 @@ def load_model(config, checkpoint_path, device):
     net.eval()
     return net
 
-def main(checkpoint_path, config_path):
+def main(checkpoint_path, config_path, csv_path="results/evaluation_results.csv"):
     config = Config(config_path)
     print("Name: ", config.output.name)
     net = load_model(config, checkpoint_path, device)
-    train_dataset, test_dataset, train_masks_dataset, test_masks_dataset = create_data_loaders(config, with_masks=True)
+    train_dataset, test_dataset, train_masks_dataset, test_masks_dataset = create_data_loaders(config, with_masks=True, test_data=True)
 
     dce_befores = []
     dce_afters = []
@@ -111,6 +113,26 @@ def main(checkpoint_path, config_path):
     print(f"Mean SSIM after registration: {mean_ssim_after:.4f}")
     print(f"Mean LNCC before registration: {mean_lncc_before:.4f}")
     print(f"Mean LNCC after registration: {mean_lncc_after:.4f}")
+
+    res_df = pd.DataFrame({
+        'Case': [config.output.name],
+        'Date': [pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")],
+        'Dice_before': [mean_dce_before],
+        'Dice_after': [mean_dce_after],
+        'SSIM_before': [mean_ssim_before],
+        'SSIM_after': [mean_ssim_after],
+        'LNCC_before': [mean_lncc_before],
+        'LNCC_after': [mean_lncc_after]
+    })
+
+    if csv_path is not None:
+        if os.path.exists(csv_path):
+            res_df.to_csv(csv_path, mode='a', header=False, index=False)
+        else:
+            res_df.to_csv(csv_path, index=False)
+
+
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate a trained diffusion registration model.")
